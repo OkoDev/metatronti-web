@@ -272,13 +272,24 @@ a{color:inherit;text-decoration:none}
     if(v.sub){ set("vSub", v.sub); $("vSub").hidden=false; }
     if(d.measured){ set("vMeasured", "◆ замерено · "+d.measured); $("vMeasured").hidden=false; }
 
-    if(d.generated_utc){
-      set("dt", "снимок на "+d.generated_utc);
-      var chip=$("chip");
-      var liveSrc = d.__src === "live";
-      chip.textContent = liveSrc ? "живые данные" : "снимок рынка";
-      chip.className = "hdr-chip " + (liveSrc ? "ok" : "warn");
+    // Время в шапке — время ДАННЫХ (data_ts), не сборки: сборка обновляется каждую секунду,
+    // а рынок в источнике может отставать. Разница видна текстом, а не замалчивается.
+    var liveSrc = d.__src === "live";
+    var dataAgeMin = null;
+    if(d.data_ts){
+      var dt = new Date(d.data_ts*1000);
+      set("dt", "данные на " + ("0"+dt.getUTCHours()).slice(-2) + ":" + ("0"+dt.getUTCMinutes()).slice(-2) + " UTC");
+      dataAgeMin = Math.max(0, Math.round((Date.now()/1000 - d.data_ts)/60));
+    } else if(d.generated_utc){
+      set("dt", "время данных неизвестно");
     }
+    var stale = (dataAgeMin !== null && dataAgeMin >= 15) || !!(d.pulse && d.pulse.stale);
+    if(stale && dataAgeMin !== null) {
+      set("dt", ($("dt").textContent || "") + " · отстают на " + dataAgeMin + " мин");
+    }
+    var chip=$("chip");
+    chip.textContent = !liveSrc ? "снимок рынка" : (stale ? "данные отстают" : "живые данные");
+    chip.className = "hdr-chip " + (liveSrc && !stale ? "ok" : "warn");
 
     var g=d.gauges||{}, parts=[];
     if(g.breadth) parts.push(gauge(g.breadth));
