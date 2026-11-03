@@ -275,8 +275,9 @@ a{color:inherit;text-decoration:none}
     if(d.generated_utc){
       set("dt", "снимок на "+d.generated_utc);
       var chip=$("chip");
-      chip.textContent = d.live ? "живые данные" : "снимок рынка";
-      chip.className = "hdr-chip " + (d.live ? "ok" : "warn");
+      var liveSrc = d.__src === "live";
+      chip.textContent = liveSrc ? "живые данные" : "снимок рынка";
+      chip.className = "hdr-chip " + (liveSrc ? "ok" : "warn");
     }
 
     var g=d.gauges||{}, parts=[];
@@ -312,14 +313,50 @@ a{color:inherit;text-decoration:none}
     if(d.dropped){ set("dropped", d.dropped); $("dropped").style.display=""; }
     else { $("dropped").style.display="none"; }
 
-    set("footL", "срез Observer · " + (d.live ? "живой снимок" : "снимок на момент сборки"));
+    set("footL", "срез Observer · " + (d.__src === "live" ? "живой канал, обновляется сам" : "снимок на момент сборки"));
     set("footR", (d.generated_utc ? "собрано "+d.generated_utc+" · " : "") + (d.schema || ""));
   }
 
-  fetch("./agenda.json?v="+Date.now(), {cache:"no-store"})
-    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
-    .then(render)
-    .catch(fail);
+  // ── откуда данные (03.11) ─────────────────────────────────────────────
+  // 1) ЖИВОЙ канал: https://api.metatronti.com/api/moment — отдельный туннель Cloudflare,
+  //    открыт РОВНО на этот путь (остальное 404). Так данные свежие без деплоя Pages.
+  // 2) Если канал молчит (ПК спит/туннель выключен) — аварийный снимок ./agenda.json,
+  //    который лежит рядом и собирается скриптом. Бейдж честно говорит, что это снимок.
+  var LIVE = "https://api.metatronti.com/api/moment";
+  var REFRESH_MS = 45000;
+  var lastGood = null;
+
+  function fetchJson(url, ms){
+    var c = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var t = setTimeout(function(){ if(c) c.abort(); }, ms);
+    return fetch(url, {cache:"no-store", signal: c ? c.signal : undefined})
+      .then(function(r){ clearTimeout(t); if(!r.ok) throw 0; return r.json(); });
+  }
+
+  function paint(d, src){
+    d = d || {};
+    d.__src = src;
+    lastGood = d;
+    render(d);
+  }
+
+  function load(){
+    fetchJson(LIVE, 4000)
+      .then(function(d){ paint(d, "live"); })
+      .catch(function(){
+        return fetchJson("./agenda.json?v="+Date.now(), 4000)
+          .then(function(d){ paint(d, "snapshot"); })
+          .catch(function(){
+            if(lastGood){                       // уже что-то показано — не стираем экран
+              var chip=$("chip");
+              if(chip){ chip.textContent="нет обновления"; chip.className="hdr-chip warn"; }
+            } else { fail(); }
+          });
+      });
+  }
+
+  load();
+  setInterval(load, REFRESH_MS);
 })();
 </script>
 </body>
