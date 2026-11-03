@@ -283,7 +283,7 @@ a{color:inherit;text-decoration:none}
     } else if(d.generated_utc){
       set("dt", "время данных неизвестно");
     }
-    var stale = (dataAgeMin !== null && dataAgeMin >= 15) || !!(d.pulse && d.pulse.stale);
+    var stale = (dataAgeMin !== null && dataAgeMin >= 5) || !!(d.pulse && d.pulse.stale);
     if(stale && dataAgeMin !== null) {
       set("dt", ($("dt").textContent || "") + " · отстают на " + dataAgeMin + " мин");
     }
