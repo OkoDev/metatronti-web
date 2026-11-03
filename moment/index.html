@@ -106,6 +106,10 @@
     grid-template-areas:"sym entry stop target risk action";
     border:1px solid var(--bd2);background:var(--panel);border-radius:10px;padding:16px 24px}
   .idea.warn{border-color:#2B2316;background:#100E0A}
+  /* Тикерный режим (решение Егора 03.11): публично — только тикер и сторона.
+     План сделки (вход/стоп/цель/плечо/RR) — ступень Operator, в бесплатном срезе его нет. */
+  .idea.tk{grid-template-columns:minmax(0,1fr) minmax(0,200px);grid-template-areas:"sym action"}
+  @media (max-width:480px){ .idea.tk{grid-template-columns:1fr;grid-template-areas:"sym" "action"} }
   .ga-sym{grid-area:sym}.ga-en{grid-area:entry}.ga-st{grid-area:stop}.ga-tg{grid-area:target}.ga-rk{grid-area:risk}.ga-ac{grid-area:action}
   .idea .sym .s{font-size:17px;font-weight:700} .idea .sym .wld{color:#C9D2DF}
   .side{display:inline-block;margin-top:5px;font:600 10px var(--mono);letter-spacing:.08em;padding:3px 8px;border-radius:4px;background:#16311F;color:var(--green)}
@@ -359,21 +363,17 @@
     }
     box.innerHTML=one(g.breadth)+one(g.drift)+one(g.phase);
   }
+  // 🔴 03.11 (Егор): в публичном срезе Observer — только тикер и сторона.
+  // План (вход/стоп/цель/плечо/RR) — ступень Operator. Отсутствие объявляем текстом,
+  // а не пустыми клетками: «нет данных» и «не по тарифу» — разные вещи.
   function idea(it){
-    var warn=it.warn;
-    var act='<div class="map '+(warn?"warn":"norm")+'">'+(warn?"⚠ "+esc(warn):"")+'</div>'
-          + '<span class="lockbtn">'+LK+'На стол · по подписке</span>';
-    return '<article class="idea'+(warn?" warn":"")+'">'
+    var act='<span class="lockbtn">'+LK+'План — на Operator</span>';
+    return '<article class="idea tk">'
       + '<div class="sym ga-sym"><div class="s">'+esc(it.sym)+'</div>'
       +   '<span class="side '+(it.side_cls==="short"?"short":"")+'">'+esc(it.side)+'</span></div>'
-      + '<div class="cell ga-en"><div class="k">ВХОД</div><div class="v">'+esc(it.entry)+'</div></div>'
-      + '<div class="cell ga-st"><div class="k">СТОП '+esc(it.stop_pct)+'</div><div class="v red">'+esc(it.stop)+'</div></div>'
-      + '<div class="cell ga-tg"><div class="k">ЦЕЛЬ '+esc(it.target_pct)+'</div><div class="v grn">'+esc(it.target)+'</div></div>'
-      + '<div class="risk ga-rk"><div class="k">ПЛЕЧО ДО</div><div class="v">×'+esc(it.lev==null?"—":it.lev)+'</div>'
-      +   '<div class="rr">на $1 риска — $'+esc(it.rr)+' цели</div></div>'
       + '<div class="act ga-ac">'+act+'</div></article>';
   }
-  function ideas(x){
+  function ideas(x, withheld){
     if(!x) return;
     set("ihTitle", x.title); set("ihNote", x.note);
     var list=document.getElementById("ideaList"); if(!list) return;
@@ -384,13 +384,18 @@
     if(d.generated_utc){
       set("dt", d.generated_utc);
       var b=document.getElementById("demoBadge");
-      // live — живая отдача при показе; иначе это сохранённый пример (Pages), не выдаём его за живое
+      // live — живая отдача при показе; иначе это снимок, собранный из живой повестки.
+      // Не выдаём снимок за поток и наоборот.
       if(b){ if(d.live){ b.textContent="данные рынка · "+d.generated_utc.split("· ").pop(); b.className="demo live"; }
-             else { b.textContent="пример · живые данные — при демонстрации"; b.className="demo"; } }
+             else { b.textContent="снимок рынка · "+d.generated_utc.split("· ").pop(); b.className="demo"; } }
     }
     verdict(d.verdict); pulse(d.pulse); measured(d); gauges(d.gauges);
     ideas(d.ideas);
-    if(d.dropped!=null) set("drop", d.dropped);
+    // Отсев и сокрытие — одной строкой: что не показали и почему. Молчание читается как «данных нет».
+    var notice=[];
+    if(d.dropped) notice.push(d.dropped);
+    if(d.withheld && d.withheld.length) notice.push("скрыто по тарифу: "+d.withheld.join("; ")+" — доступно на Operator");
+    if(notice.length) set("drop", notice.join(" · "));
   }
   fetch("./agenda.json?v="+Date.now(), {cache:"no-store"})
     .then(function(r){ if(!r.ok) throw 0; return r.json(); })
