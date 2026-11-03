@@ -3,380 +3,324 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Metatron · Повестка</title>
-<meta name="description" content="Разбор дня на крипторынке: вердикт, приборы, идеи. Вкладки по подписке.">
+<title>Момент — Metatron Trading Intelligence</title>
+<meta name="description" content="Срез рынка на сейчас: вердикт дня, три прибора, пульс и тикеры идей. Read-only, без плана сделки.">
 <link rel="canonical" href="https://metatronti.com/moment/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Metatron">
 <meta property="og:url" content="https://metatronti.com/moment/">
-<meta property="og:title" content="Metatron · Повестка дня">
-<meta property="og:description" content="Разбор дня на крипторынке: вердикт, приборы, идеи.">
+<meta property="og:title" content="Момент — Metatron">
+<meta property="og:description" content="Срез рынка: вердикт дня, три прибора, пульс и тикеры идей.">
 <meta property="og:locale" content="ru_RU">
 <meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* /moment — публичный срез Повестки на КАНОНЕ (DASH-MIGRATE 2.4, 03.11).
+   До этой правки страница жила в мокап-айдентике (золото + IBM Plex) и расходилась с продом
+   (/agenda и /moment на :3100 — бирюза + Onest). Теперь токены те же, что у .term в oko-dashboard:
+   ink/бирюза/Onest, шкала 10–34 px (Д3). Контракт данных — oko.moment/1
+   (docs/product/dev/MOMENT-CONTRACT.md). Плана сделки тут нет: Observer «видит», Operator
+   «работает»; сокрытие объявлено строкой, а не молчанием. Скелет пустой намеренно:
+   до загрузки JSON показываем «—», а не демо-цифры. */
+:root{
+  --ink:#080b0c; --ink-2:#0e1315; --ink-3:#141c1e; --ink-4:#192224;
+  --paper:#eef2f0; --paper-dim:#8a9a97; --paper-dimmer:#7A838F;
+  --teal:#37e0c4; --teal-06:rgba(55,224,196,.06); --teal-12:rgba(55,224,196,.12);
+  --red:#e2555f; --amber:#e0b437; --green:#37e0a0;
+  --white-08:rgba(255,255,255,.08); --white-14:rgba(255,255,255,.14);
+  --sans:'Onest',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scrollbar-gutter:stable}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);font-size:12.5px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2{margin:0;font-weight:700}
+a{color:inherit;text-decoration:none}
+
+/* ── оболочка: рельс + рабочая область (как .term в проде) ─────── */
+.term{display:flex;min-height:100dvh;background:var(--ink)}
+.rail{width:86px;flex:0 0 86px;border-right:1px solid var(--white-08);background:var(--ink-2);
+  display:flex;flex-direction:column;align-items:stretch;padding:12px 8px;gap:4px;position:sticky;top:0;height:100dvh}
+.rail-mk{display:block;margin:4px auto 16px;color:var(--teal);filter:drop-shadow(0 0 6px var(--teal-12))}
+.rail-i{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  min-height:44px;padding:8px 0;border-radius:10px;color:var(--paper-dim);font-size:10.5px}
+.rail-i.on{color:var(--teal);background:var(--teal-06)}
+.rail-i.locked{color:var(--paper-dimmer);cursor:default}
+.rail-ico{position:relative;display:inline-flex}
+.rail-lock{position:absolute;top:-.3em;right:-.6em;color:var(--paper-dimmer)}
+.work{flex:1;min-width:0;padding-bottom:32px}
+
+/* ── шапка ────────────────────────────────────────────────────── */
+.hdr{display:flex;align-items:center;flex-wrap:wrap;gap:12px 16px;padding:12px 24px;
+  border-bottom:1px solid var(--white-08);margin-bottom:12px}
+.hdr-brand{display:flex;align-items:center;gap:8px;min-width:0}
+.hdr-mk{color:var(--teal);flex:none}
+.hdr-wm{display:flex;flex-direction:column;line-height:1}
+.hdr-nm{font-weight:700;font-size:13px;letter-spacing:-.01em}
+.hdr-ct{font-family:var(--mono);font-size:.58em;letter-spacing:.26em;text-transform:uppercase;color:var(--paper-dim);margin-top:.25em;white-space:nowrap}
+.hdr-tab{font-weight:500;font-size:11.5px;color:var(--paper-dim);padding-left:16px;border-left:1px solid var(--white-08)}
+.hdr-time{color:var(--paper-dim);font-size:11px;font-family:var(--mono);margin-left:auto}
+.hdr-chip{display:inline-flex;align-items:center;gap:8px;font-size:10.5px;font-family:var(--mono);
+  text-transform:uppercase;letter-spacing:.06em;padding:4px 12px;border-radius:999px;
+  border:1px solid var(--tone,var(--paper-dimmer));color:var(--tone,var(--paper-dimmer))}
+.hdr-chip::before{content:"";width:.45em;height:.45em;border-radius:50%;background:currentColor}
+.hdr-chip.ok{--tone:var(--green)} .hdr-chip.warn{--tone:var(--amber)}
+.hdr-cta{font-size:11.5px;font-weight:500;padding:8px 16px;border-radius:10px;background:var(--teal);color:#06100e}
+.hdr-cta:hover{filter:brightness(1.08)}
+
+/* ── вердикт ───────────────────────────────────────────────────── */
+.mom-verdict{margin:16px 24px 0;padding:20px 24px;border:1px solid var(--white-14);border-left-width:4px;
+  border-radius:14px;background:var(--ink-2)}
+.mom-verdict.ok{border-left-color:var(--green)} .mom-verdict.warn{border-left-color:var(--amber)}
+.mom-verdict.bad{border-left-color:var(--red)} .mom-verdict.na{border-left-color:var(--paper-dimmer)}
+.mom-light{display:block;font-size:25px;line-height:1.2;font-weight:700}
+.mom-verdict.ok .mom-light{color:var(--green)} .mom-verdict.warn .mom-light{color:var(--amber)}
+.mom-verdict.bad .mom-light{color:var(--red)}
+.mom-sub{margin:12px 0 0;max-width:78ch;font-size:12.5px}
+.mom-measured{margin:12px 0 0;padding-left:12px;border-left:2px solid var(--white-14);
+  color:var(--paper-dim);font-size:11.5px}
+
+/* ── приборы ──────────────────────────────────────────────────── */
+.mom-h{margin:20px 24px 8px;font-size:11.5px;font-weight:500;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--paper-dim)}
+.mom-gauges{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding-inline:24px}
+.mom-gauge{display:flex;flex-direction:column;gap:4px;padding:16px;background:var(--ink-2);
+  border:1px solid var(--white-08);border-radius:10px}
+.mom-gauge.dim{opacity:.85}
+.mom-g-lab{color:var(--paper-dim);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em}
+.mom-g-lab em{font-style:normal;text-transform:none;letter-spacing:0;color:var(--paper-dimmer);margin-left:8px}
+.mom-g-val{font-family:var(--mono);font-size:17px;font-weight:700}
+.mom-g-bar{height:6px;border-radius:999px;background:var(--ink-4);overflow:hidden;display:block}
+.mom-g-bar i{display:block;height:100%;border-radius:999px;background:var(--paper-dimmer)}
+.mom-g-bar i.ok{background:var(--green)} .mom-g-bar i.warn{background:var(--amber)} .mom-g-bar i.red{background:var(--red)}
+.mom-g-note{color:var(--paper-dim);font-size:11px;font-family:var(--mono)}
+
+/* ── пульс ────────────────────────────────────────────────────── */
+.mom-pulse{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;margin:12px 24px 0;
+  padding:16px;background:var(--ink-2);border:1px solid var(--white-08);border-radius:10px;font-size:11.5px}
+.mom-pulse-state{font-weight:700;color:var(--paper)}
+.mom-pulse-move{display:inline-flex;flex-wrap:wrap;gap:12px;font-family:var(--mono);font-size:11px;color:var(--paper-dim)}
+.mom-pulse-liq{flex:1 1 100%;font-family:var(--mono);font-size:11px;color:var(--paper-dim)}
+
+/* ── идеи: тикер + сторона; план у Operator ───────────────────── */
+.mom-ideas{margin:16px 24px 0;padding:16px;background:var(--ink-2);border:1px solid var(--white-08);border-radius:10px}
+.mom-ideas-note{margin:0 0 12px;color:var(--paper-dim);font-size:11.5px}
+.mom-tickers{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0;padding:0}
+.mom-ticker{display:inline-flex;align-items:baseline;gap:8px;padding:4px 12px;
+  border:1px solid var(--white-14);border-radius:999px;background:var(--ink-3)}
+.mom-ticker b{font-size:12.5px;letter-spacing:.02em}
+.mom-side{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.mom-side.long{color:var(--green)} .mom-side.short{color:var(--red)}
+.mom-na{margin:0;color:var(--paper-dimmer);font-size:11.5px;list-style:none}
+.mom-withheld{margin:12px 0 0;color:var(--paper-dimmer);font-size:10.5px}
+.mom-dropped{margin:12px 24px 0;color:var(--paper-dimmer);font-family:var(--mono);font-size:11px}
+.mom-foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:20px 24px 0;
+  color:var(--paper-dimmer);font-family:var(--mono);font-size:11px}
+
+/* честное состояние: источник молчит */
+.mom-empty{margin:24px;padding:24px;border:1px dashed var(--white-14);border-radius:14px;color:var(--paper-dim)}
+.mom-empty h1{margin:0 0 12px;font-size:17px;color:var(--paper)}
+.mom-empty p{margin:0;max-width:62ch;font-size:11.5px}
+.mom-empty b{color:var(--paper)}
+
+@media (max-width:720px){
+  .term{flex-direction:column}
+  .rail{position:static;width:100%;height:auto;flex:0 0 auto;flex-direction:row;overflow-x:auto;
+    border-right:0;border-bottom:1px solid var(--white-08);padding:8px}
+  .rail-mk{display:none}
+  .rail-i{flex:0 0 auto;flex-direction:row;gap:8px;padding:8px 12px}
+  .hdr{padding:10px 16px}
+  .hdr-time{margin-left:0;width:100%;order:5}
+  .mom-verdict,.mom-pulse,.mom-ideas,.mom-dropped,.mom-foot,.mom-h{margin-left:16px;margin-right:16px}
+  .mom-gauges{padding-inline:16px;grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
-<style>
-  /* /moment — первый слой целевого прода. Язык из мокапа «ОКО — терминал»: левый рельс,
-     золотой акцент, IBM Plex, экран не нейтрален. Read-only, вкладки гейтятся тарифом. */
-  :root{
-    --bg:#0A0D12; --nav:#0D1117; --panel:#0E1219; --panel2:#121923; --right:#0C1016;
-    --bd:#1C2432; --bd2:#1F2838; --bd3:#253048;
-    --fg:#E8ECF2; --s1:#A9B4C4; --s2:#8E9BB0; --s3:#7C8899; --s4:#5B6678;
-    --gold:#D9A441; --goldsoft:#182134; --green:#4ECB8D; --green2:#5FC08C;
-    --red:#D8614F; --red2:#E07A6B; --amber:#C9893A; --amber2:#D8945A;
-    --sans:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
-    color-scheme:dark;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;max-width:100%;overflow-x:hidden}
-  body{background:var(--bg);color:var(--fg);font-family:var(--sans);-webkit-font-smoothing:antialiased}
-  a{color:inherit;text-decoration:none}
-  .shell{min-height:100vh;display:flex;flex-wrap:wrap;max-width:100%;overflow-x:hidden}
-  .col,.aside,.body{min-width:0}
+<div class="term">
+  <aside class="rail" aria-label="Вкладки">
+    <svg class="rail-mk" width="32" height="32" viewBox="0 0 100 100" role="img" aria-label="Metatron">
+      <polygon points="50,10 84.64,30 84.64,70 50,90 15.36,70 15.36,30" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></polygon>
+      <g fill="currentColor" opacity=".6">
+        <circle cx="50" cy="10" r="3.6"/><circle cx="84.64" cy="30" r="3.6"/><circle cx="84.64" cy="70" r="3.6"/>
+        <circle cx="50" cy="90" r="3.6"/><circle cx="15.36" cy="70" r="3.6"/><circle cx="15.36" cy="30" r="3.6"/>
+      </g>
+      <circle cx="50" cy="50" r="4.2" fill="currentColor"></circle>
+    </svg>
+    <!-- Вкладки как в проде: Повестка открыта (эта страница). Публичная статика не имеет
+         /monitor и /agenda, поэтому остальные — не ссылки, а модель тарифа (rail-i locked). -->
+    <span class="rail-i on" aria-current="page">
+      <span class="rail-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2.5-6 4 12 2.5-6H22"/></svg></span>
+      Повестка
+    </span>
+    <span class="rail-i locked" aria-disabled="true" title="доступно на тарифе Operator">
+      <span class="rail-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M10 9v11"/></svg><svg class="rail-lock" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+      Стол
+    </span>
+    <span class="rail-i locked" aria-disabled="true" title="доступно на тарифе Operator">
+      <span class="rail-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8L3 5z"/></svg><svg class="rail-lock" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+      Фильтр
+    </span>
+    <span class="rail-i locked" aria-disabled="true" title="Монитор — в терминале (Observer)">
+      <span class="rail-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><rect x="13.5" y="13.5" width="7" height="7" rx="1"/></svg><svg class="rail-lock" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+      Монитор
+    </span>
+    <span class="rail-i locked" aria-disabled="true" title="доступно на тарифе Quant">
+      <span class="rail-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9c2.5-4 4.5-4 7 0s4.5 4 7 0 4-3 6-1M2 17c2.5-4 4.5-4 7 0s4.5 4 7 0 4-3 6-1"/></svg><svg class="rail-lock" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+      Волны
+    </span>
+    <span class="rail-i locked" aria-disabled="true" title="доступно на тарифе Quant">
+      <span class="rail-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4M12 4h.01M9 13v1.5M15 13v1.5"/></svg><svg class="rail-lock" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+      Бот
+    </span>
+  </aside>
 
-  /* рельс */
-  .rail{width:88px;flex:0 0 88px;background:var(--nav);border-right:1px solid var(--bd);
-    display:flex;flex-direction:column;align-items:center;padding:18px 0 22px;gap:4px}
-  .mk{width:34px;height:34px;border:1.5px solid var(--gold);border-radius:50%;display:flex;
-    align-items:center;justify-content:center;margin-bottom:20px;flex:none}
-  .mk i{width:11px;height:11px;border-radius:50%;background:var(--gold)}
-  .tab{width:68px;padding:11px 0;border-radius:9px;display:flex;flex-direction:column;align-items:center;
-    gap:6px;color:var(--s2);position:relative;cursor:pointer}
-  .tab span{font-size:10.5px;font-weight:500}
-  .tab.on{background:var(--goldsoft);color:var(--gold)}
-  .tab.lock{opacity:.5;cursor:default}
-  .tab .lk{position:absolute;top:6px;right:11px;width:11px;height:11px;color:var(--s3)}
-  .railftr{margin-top:auto;text-align:center;color:var(--s4);font-size:10px;font-family:var(--mono);line-height:1.5}
-
-  /* основная колонка */
-  .col{flex:999 1 700px;min-width:0;display:flex;flex-direction:column}
-  .hd{height:56px;flex:0 0 56px;border-bottom:1px solid var(--bd);display:flex;align-items:center;
-    gap:16px;padding:0 24px}
-  .hd .nm{font-size:14px;font-weight:700;letter-spacing:.14em}
-  .hd .dt{font-family:var(--mono);font-size:12px;color:var(--s2)}
-  .hd .demo{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-    color:var(--amber2);background:#1c160b;border:1px solid #2b2316;border-radius:5px;padding:3px 8px}
-  .hd .ea{margin-left:auto;font:600 12px var(--sans);padding:8px 16px;border-radius:7px;background:var(--gold);color:#15110A;cursor:pointer}
-
-  .body{flex:1;padding:24px;display:flex;flex-direction:column;gap:18px}
-
-  /* вердикт */
-  .verdict{position:relative;border:1px solid #2A2418;background:#14110B;border-radius:12px;padding:24px}
-  .vtop{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
-  .vdot{position:absolute;left:10px;top:31px;width:9px;height:9px;border-radius:50%;background:var(--gold)}
-  .vmain{flex:1 1 420px;min-width:0}
-  .vmain h1{margin:0;font-size:clamp(26px,4vw,34px);line-height:1.12;font-weight:700;letter-spacing:-.01em}
-  .vmain .sub{margin:10px 0 0;font-size:15px;line-height:1.6;color:var(--s1);max-width:620px}
-  .vmain .sub b{color:var(--fg);font-weight:600}
-  .vmain .pulse{margin:14px 0 0;display:flex;flex-wrap:wrap;gap:8px}
-  .pchip{font-size:12.5px;color:var(--s1);background:var(--panel);border:1px solid var(--bd2);border-radius:7px;padding:6px 11px}
-  .pchip b{color:var(--fg);font-weight:600}
-  .move{margin:10px 0 0;display:flex;flex-wrap:wrap;gap:16px;font-family:var(--mono);font-size:12px;
-    background:var(--panel);border:1px solid var(--bd2);border-radius:7px;padding:8px 13px}
-  .move .mv{display:flex;align-items:baseline;gap:7px}
-  .move .tf{color:var(--s3);font-size:11px;min-width:46px}
-  .move .dn{color:var(--red2)} .move .up{color:var(--green2)}
-  .move .sep{color:var(--s4)}
-  .measured{margin:12px 0 0;font-size:13.5px;line-height:1.55;color:var(--s1);background:#14110B;
-    border-left:2px solid var(--gold);border-radius:0 8px 8px 0;padding:10px 14px;max-width:720px}
-  .measured .mi{color:var(--gold);font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-right:7px}
-  .measured b{color:var(--fg);font-weight:600}
-  .vcount{flex:0 0 auto;text-align:right;font-family:var(--mono)}
-  .vcount .l{font-size:11px;color:var(--s3);text-transform:uppercase;letter-spacing:.08em}
-  .vcount .n{font-size:26px;font-weight:600;color:var(--s1)}
-
-  .gauges{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:22px}
-  @media (max-width:620px){.gauges{grid-template-columns:1fr}}
-  .ga{background:var(--panel);border:1px solid var(--bd2);border-radius:9px;padding:14px 16px}
-  .ga.dim{opacity:.62;border-color:#161C27}
-  .ga .r1{display:flex;justify-content:space-between;align-items:baseline}
-  .ga .nm{font-size:11.5px;color:var(--s2)} .ga .mt{font-family:var(--mono);font-size:11px;color:var(--s4)}
-  .ga .val{font-family:var(--mono);font-size:24px;font-weight:600;margin:7px 0 2px}
-  .ga .bar{height:4px;background:#1A2130;border-radius:2px;overflow:hidden;margin:8px 0 7px}
-  .ga .bar i{display:block;height:100%}
-  .ga .cap{font-family:var(--mono);font-size:11px;color:var(--s3)}
-
-  /* идеи */
-  .ideas{display:flex;flex-direction:column;min-height:0}
-  .ih{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
-  .ih h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--s2)}
-  .ih .m{font-family:var(--mono);font-size:12px;color:var(--s4)}
-  .idea{display:grid;align-items:center;column-gap:16px;row-gap:12px;
-    grid-template-columns:84px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,126px) minmax(0,180px);
-    grid-template-areas:"sym entry stop target risk action";
-    border:1px solid var(--bd2);background:var(--panel);border-radius:10px;padding:16px 24px}
-  .idea.warn{border-color:#2B2316;background:#100E0A}
-  /* Тикерный режим (решение Егора 03.11): публично — только тикер и сторона.
-     План сделки (вход/стоп/цель/плечо/RR) — ступень Operator, в бесплатном срезе его нет. */
-  .idea.tk{grid-template-columns:minmax(0,1fr) minmax(0,200px);grid-template-areas:"sym action"}
-  @media (max-width:480px){ .idea.tk{grid-template-columns:1fr;grid-template-areas:"sym" "action"} }
-  .ga-sym{grid-area:sym}.ga-en{grid-area:entry}.ga-st{grid-area:stop}.ga-tg{grid-area:target}.ga-rk{grid-area:risk}.ga-ac{grid-area:action}
-  .idea .sym .s{font-size:17px;font-weight:700} .idea .sym .wld{color:#C9D2DF}
-  .side{display:inline-block;margin-top:5px;font:600 10px var(--mono);letter-spacing:.08em;padding:3px 8px;border-radius:4px;background:#16311F;color:var(--green)}
-  .side.short{background:#31191A;color:var(--red2)}
-  .vdot.green{background:var(--green)} .vdot.amber{background:var(--gold)} .vdot.red{background:var(--red)}
-  .demo.live{color:var(--green2);background:#0c1a12;border-color:#17301f}
-  h2 .dm{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--amber2);margin-left:7px;
-    text-transform:uppercase;border:1px solid #2b2316;border-radius:4px;padding:1px 6px;vertical-align:middle}
-  .cell{min-width:0;font-family:var(--mono)}
-  .cell .k{font-size:10.5px;color:var(--s3);letter-spacing:.05em} .cell .v{font-size:15px;font-weight:600;margin-top:3px}
-  .cell .v.red{color:var(--red2)} .cell .v.grn{color:var(--green)}
-  .risk{text-align:right;font-family:var(--mono);min-width:0}
-  .risk .k{font-size:10.5px;color:var(--s3)} .risk .v{font-size:17px;font-weight:600;margin-top:2px} .risk .rr{font-size:10.5px;color:var(--s3);margin-top:2px}
-  .act{display:flex;flex-direction:column;gap:7px;align-items:stretch;min-width:0}
-  .act .map{font-size:11.5px;line-height:1.35;text-align:right}
-  .act .map.ok{color:var(--green2)} .act .map.norm{color:#9CA8BA} .act .map.warn{color:var(--amber2)}
-  @media (max-width:880px){
-    .idea{grid-template-columns:1fr 1fr 1fr;grid-template-areas:"sym sym sym" "entry stop target" "risk action action"}
-    .risk{text-align:left} .act .map{text-align:left}
-  }
-  @media (max-width:480px){
-    .idea{grid-template-columns:1fr 1fr;grid-template-areas:"sym sym" "entry stop" "target target" "risk risk" "action action"}
-  }
-  .lockbtn{font:600 11.5px var(--sans);padding:9px 14px;border-radius:7px;background:#1B2436;color:var(--s2);
-    display:flex;justify-content:center;align-items:center;gap:7px;cursor:default;width:100%}
-  .lockbtn svg{width:12px;height:12px}
-  .drop{margin-top:14px;font-family:var(--mono);font-size:11.5px;color:var(--s4)}
-
-  /* правый рельс */
-  .aside{flex:1 1 300px;min-width:0;max-width:340px;border-left:1px solid var(--bd);background:var(--right);
-    padding:20px 20px 24px;display:flex;flex-direction:column;gap:20px}
-  @media (max-width:980px){.aside{max-width:none;border-left:0;border-top:1px solid var(--bd)}}
-  .aside h2{margin:0 0 12px;font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--s2)}
-  .kv{display:flex;flex-direction:column;gap:10px;font-family:var(--mono);font-size:12.5px}
-  .kv .r{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap} .kv .r span:first-child{color:var(--s2)}
-  .kv .r span:last-child{text-align:right}
-  .feed{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:11px}
-  .feed li{display:flex;gap:10px;font-size:12.5px;line-height:1.45}
-  .feed .tm{font-family:var(--mono);color:var(--s4);flex:0 0 38px}
-  .feed .tx{color:#BCC6D4} .feed .tx b{color:var(--fg)} .feed .grn{color:var(--green2)} .feed .amb{color:var(--amber2)}
-  .disc{margin-top:auto;border:1px solid #2B2316;background:#100E0A;border-radius:10px;padding:15px 16px}
-  .disc .l{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#C98F4A;margin-bottom:9px}
-  .disc .big{display:flex;align-items:baseline;gap:9px}
-  .disc .big .n{font-family:var(--mono);font-size:27px;font-weight:600}
-  .disc .big .t{font-size:12.5px;color:var(--s1);line-height:1.4}
-  .disc .note{margin-top:10px;padding-top:10px;border-top:1px solid #241E13;font-size:11.5px;line-height:1.5;color:var(--s2)}
-  .disc .note .red{color:var(--red2);font-family:var(--mono)} .disc .note .amb{color:var(--amber2)}
-
-  /* планшет/телефон: отступы и размеры */
-  @media (max-width:680px){
-    .hd{height:auto;min-height:52px;flex-wrap:wrap;gap:8px 12px;padding:11px 16px}
-    .hd .ea{margin-left:0}
-    .body{padding:16px}
-    .verdict{padding:18px 16px}
-    .vmain h1{font-size:26px}
-    .vcount{position:absolute;top:18px;right:16px}
-    .aside{padding:18px 16px}
-  }
-  /* мобильный рельс */
-  @media (max-width:560px){
-    .rail{width:100%;flex:0 0 auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--bd);
-      overflow-x:auto;padding:10px 12px;gap:6px;align-items:center}
-    .mk{margin-bottom:0;margin-right:6px} .tab{flex:0 0 auto;width:auto;flex-direction:row;padding:8px 11px}
-    .tab .lk{position:static} .railftr{display:none}
-    .move{gap:10px} .move .tf{min-width:0}
-  }
-</style>
-
-<div class="shell">
-  <nav class="rail" aria-label="Разделы">
-    <div class="mk"><i></i></div>
-    <div class="tab on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg><span>Повестка</span></div>
-    <div class="tab lock"><svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></svg><span>Стол</span></div>
-    <div class="tab lock"><svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"/></svg><span>Фильтр</span></div>
-    <div class="tab lock"><svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1"/></svg><span>Монитор</span></div>
-    <div class="tab lock"><svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9c2.2-3 4.4-3 6.6 0s4.4 3 6.6 0 4.6-3 6.8 0"/><path d="M2 16c2.2-3 4.4-3 6.6 0s4.4 3 6.6 0 4.6-3 6.8 0"/></svg><span>Волны</span></div>
-    <div class="tab lock"><svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 7V4M9 13h.01M15 13h.01"/></svg><span>Бот</span></div>
-    <div class="railftr">free<br>·</div>
-  </nav>
-
-  <div class="col">
-    <header class="hd">
-      <a class="nm" href="https://metatronti.com/" title="На главную">METATRON</a>
-      <span class="dt" id="dt">11.09 · 04:12 UTC</span>
-      <span class="demo" id="demoBadge">демо · пример</span>
-      <a class="ea" href="https://metatronti.com/#pricing">Ранний доступ</a>
+  <main class="work mom">
+    <header class="hdr">
+      <span class="hdr-brand">
+        <svg class="hdr-mk" width="30" height="30" viewBox="0 0 100 100" aria-hidden="true">
+          <polygon points="50,10 84.64,30 84.64,70 50,90 15.36,70 15.36,30" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></polygon>
+          <g fill="currentColor" opacity=".6">
+            <circle cx="50" cy="10" r="3.6"/><circle cx="84.64" cy="30" r="3.6"/><circle cx="84.64" cy="70" r="3.6"/>
+            <circle cx="50" cy="90" r="3.6"/><circle cx="15.36" cy="70" r="3.6"/><circle cx="15.36" cy="30" r="3.6"/>
+          </g>
+          <circle cx="50" cy="50" r="4.2" fill="currentColor"></circle>
+        </svg>
+        <span class="hdr-wm">
+          <span class="hdr-nm">METATRON</span>
+          <span class="hdr-ct">Trading Intelligence</span>
+        </span>
+      </span>
+      <b class="hdr-tab">Момент</b>
+      <span class="hdr-time" id="dt">—</span>
+      <span class="hdr-chip" id="chip">получаем данные</span>
+      <a class="hdr-cta" href="/#pricing">Ранний доступ</a>
     </header>
 
-    <main class="body">
-      <section class="verdict">
-        <div class="vtop">
-          <div class="vdot" id="vDot"></div>
-          <div class="vmain">
-            <h1 id="vTitle">Сегодня — скорее нет</h1>
-            <p class="sub" id="vSub">Ни один прибор не говорит «да»: падение слабое, для шорта ещё рано.
-              Если всё-таки входишь — <b>половина обычного размера</b>.</p>
-            <div class="pulse" id="vPulse">
-              <span class="pchip">Рынок — <b>спокойно</b></span>
-              <span class="pchip">Ликвидации за час: шортов больше — <b>$95k</b> против $26k лонгов</span>
-            </div>
-            <div class="move" id="vMove">
-              <span class="mv"><span class="tf">15 мин</span><span class="dn">↓0%</span><span class="up">↑1%</span></span>
-              <span class="sep">·</span>
-              <span class="mv"><span class="tf">2 часа</span><span class="dn">↓0%</span><span class="up">↑3%</span></span>
-              <span class="sep">·</span>
-              <span class="mv"><span class="tf">6 часов</span><span class="dn">↓2%</span><span class="up">↑43%</span></span>
-            </div>
-            <p class="measured" id="vMeasured"><span class="mi">◆ замерено</span>Шорт в начале слива <b>4 года из 4</b> оказывался хуже обычного часа — поэтому «скорее нет».</p>
-          </div>
-          <div class="vcount"><div class="l">дней подряд</div><div class="n">3</div></div>
-        </div>
-        <div class="gauges" id="gauges">
-          <div class="ga">
-            <div class="r1"><span class="nm">Падают разом</span><span class="mt">обвал — от 15%</span></div>
-            <div class="val" style="color:var(--red)">1.9%</div>
-            <div class="bar"><i style="width:13%;background:var(--red)"></i></div>
-            <div class="cap">4 монеты из 210 · обвала нет</div>
-          </div>
-          <div class="ga">
-            <div class="r1"><span class="nm">Рынок за 30 дней</span><span class="mt">437 монет</span></div>
-            <div class="val">+8.03%</div>
-            <div class="bar"><i style="width:80%;background:var(--amber)"></i></div>
-            <div class="cap" style="color:var(--amber2)">растёт — для шорта рано</div>
-          </div>
-          <div class="ga dim">
-            <div class="r1"><span class="nm">Фаза рынка</span><span class="mt">справочно</span></div>
-            <div class="val" style="color:var(--s1)">пока неясно</div>
-            <div class="bar"></div>
-            <div class="cap">точным прибором не измеряли</div>
-          </div>
-        </div>
-      </section>
+    <section class="mom-verdict na" id="vBox" aria-label="Вердикт дня">
+      <span class="mom-light" id="vTitle">Загрузка…</span>
+      <p class="mom-sub" id="vSub" hidden></p>
+      <p class="mom-measured" id="vMeasured" hidden></p>
+    </section>
 
-      <section class="ideas">
-        <div class="ih"><h2 id="ihTitle">Идеи дня</h2><span class="m" id="ihNote">проверка идёт…</span></div>
-        <!-- Скелет без чисел: план сделки в публичный срез не попадает (решение 03.11).
-             Пока снимок не загрузился — честное «загружается», а не демо-цифры. -->
-        <div style="display:flex;flex-direction:column;gap:10px" id="ideaList">
-          <div class="drop">загружаем срез рынка…</div>
-        </div>
-        <div class="drop" id="drop"></div>
-      </section>
-    </main>
-  </div>
+    <h2 class="mom-h">Приборы</h2>
+    <section class="mom-gauges" id="gauges" aria-label="Приборы">
+      <div class="mom-gauge"><span class="mom-g-lab">Массовое падение</span><span class="mom-g-val">—</span><span class="mom-g-bar"></span></div>
+      <div class="mom-gauge"><span class="mom-g-lab">Рынок за 30 дней</span><span class="mom-g-val">—</span><span class="mom-g-bar"></span></div>
+      <div class="mom-gauge"><span class="mom-g-lab">Фаза рынка</span><span class="mom-g-val">—</span><span class="mom-g-bar"></span></div>
+    </section>
 
-  <aside class="aside">
-    <div>
-      <h2>Бот сейчас</h2>
-      <div class="kv">
-        <div class="r"><span>риск в открытых сделках</span><span>≤ 15%</span></div>
-        <div class="r"><span>риск на сделку</span><span>0.5%</span></div>
-        <div class="r"><span>дневной лимит</span><span style="color:var(--s2)">снят 08.10</span></div>
-        <div class="r"><span>в работе</span><span>волны · импульс · слом · радар</span></div>
-      </div>
-    </div>
-    <div>
-      <h2>Последнее<span class="dm">демо</span></h2>
-      <ul class="feed">
-        <li><span class="tm">03:48</span><span class="tx">закрыл <b>ETHFI</b> по цели <span class="grn">+1.24%</span></span></li>
-        <li><span class="tm">03:30</span><span class="tx">режим сменился — <span class="amb">для шорта не время</span></span></li>
-        <li><span class="tm">02:11</span><span class="tx">убрал <b>SKR</b> — настройка себя не доказала</span></li>
-      </ul>
-    </div>
-    <div class="disc">
-      <div class="l">Дисциплина</div>
-      <div class="big"><span class="n">3</span><span class="t">входа против карты<br>за 30 дней</span></div>
-      <div class="note">Их итог: <span class="red">−$212</span> — <span class="amb">пример, журнал ещё не ведётся</span>.
-        План: сделки ключом только на чтение + снимок карточки в минуту входа; мера — доли прибылей и убытков.</div>
-    </div>
-  </aside>
+    <section class="mom-pulse" id="pulse" aria-label="Пульс рынка" hidden>
+      <span class="mom-pulse-state" id="pState"></span>
+      <span class="mom-pulse-move" id="pMove"></span>
+      <span class="mom-pulse-liq" id="pLiq"></span>
+    </section>
+
+    <h2 class="mom-h">Идеи дня</h2>
+    <section class="mom-ideas" aria-label="Идеи дня">
+      <p class="mom-ideas-note" id="ideasNote">проверка идёт…</p>
+      <ul class="mom-tickers" id="tickers"></ul>
+      <p class="mom-withheld" id="withheld" hidden></p>
+    </section>
+    <p class="mom-dropped" id="dropped"></p>
+
+    <footer class="mom-foot">
+      <span id="footL">срез Observer</span>
+      <span id="footR"></span>
+    </footer>
+  </main>
 </div>
 
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
-
 <script>
-/* /moment читает снимок повестки (scripts/moment_snapshot.py → agenda.json). Нет файла или
-   ошибка — остаётся вшитое демо как скелет. Публичного бэкенда нет: файл деплоится статикой. */
 (function(){
   "use strict";
-  var CVAR = {green:"var(--green)", amber:"var(--amber)", red:"var(--red)", s1:"var(--s1)"};
-  var LK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">'
-         + '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>';
+  var $ = function(id){ return document.getElementById(id); };
   function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g, function(c){
     return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
-  function set(id, txt){ var el=document.getElementById(id); if(el) el.textContent=txt; }
+  function set(id, txt){ var el=$(id); if(el && txt!=null) el.textContent=txt; }
 
-  function verdict(v){
-    if(!v) return;
-    set("vTitle", v.title);
-    set("vSub", v.sub);
-    var dot=document.getElementById("vDot");
-    if(dot) dot.className="vdot "+(v.light==="green"?"green":v.light==="red"?"red":"amber");
-  }
-  function pulse(p){
-    if(!p) return;
-    var chips=['<span class="pchip">Рынок — <b>'+esc(p.state)+'</b></span>'];
-    if(p.liq) chips.push('<span class="pchip">'+esc(p.liq.replace(/^⚡\s*/,""))+'</span>');
-    var vp=document.getElementById("vPulse"); if(vp) vp.innerHTML=chips.join("");
-    if(p.move && p.move.length){
-      var mv=p.move.map(function(m){
-        return '<span class="mv"><span class="tf">'+esc(m.tf)+'</span>'
-             + '<span class="dn">↓'+esc(m.dn)+'%</span><span class="up">↑'+esc(m.up)+'%</span></span>';
-      }).join('<span class="sep">·</span>');
-      var vm=document.getElementById("vMove"); if(vm) vm.innerHTML=mv;
+  // Источник молчит — честный блок: «нет данных» и «рынок спокоен» разные вещи,
+  // поэтому пустые приборы не рисуем.
+  function fail(){
+    var main=document.querySelector(".work");
+    if(main){
+      main.innerHTML='<section class="mom-empty" role="status">'
+        + '<h1>Срез рынка недоступен</h1>'
+        + '<p>Терминал не отдал повестку — показывать нечего. Это <b>не</b> «рынок спокоен», '
+        + 'это отсутствие данных: срез обновится сам, когда источник ответит.</p></section>';
     }
   }
-  function measured(d){
-    var el=document.getElementById("vMeasured"); if(!el) return;
-    if(d.measured){ el.innerHTML='<span class="mi">◆ замерено</span>'+esc(d.measured); el.style.display=""; }
-    else el.style.display="none";
+
+  function gauge(g){
+    return '<div class="mom-gauge'+(g.dim?" dim":"")+'">'
+      + '<span class="mom-g-lab">'+esc(g.label)+(g.meta?"<em>"+esc(g.meta)+"</em>":"")+'</span>'
+      + '<span class="mom-g-val">'+esc(g.val)+'</span>'
+      + '<span class="mom-g-bar"><i class="'+esc(g.color||"s1")+'" style="width:'
+      +   Math.max(0,Math.min(100,+g.pct||0))+'%"></i></span>'
+      + (g.cap?'<span class="mom-g-note">'+esc(g.cap)+'</span>':'')
+      + '</div>';
   }
-  function gauges(g){
-    if(!g) return;
-    var box=document.getElementById("gauges"); if(!box) return;
-    function one(x){
-      var col=CVAR[x.color]||"var(--s1)";
-      var bar=x.pct>0 ? '<div class="bar"><i style="width:'+x.pct+'%;background:'+col+'"></i></div>'
-                      : '<div class="bar"></div>';
-      return '<div class="ga'+(x.dim?' dim':'')+'">'
-        + '<div class="r1"><span class="nm">'+esc(x.label)+'</span><span class="mt">'+esc(x.meta)+'</span></div>'
-        + '<div class="val" style="color:'+col+'">'+esc(x.val)+'</div>'
-        + bar
-        + '<div class="cap" style="color:'+col+'">'+esc(x.cap)+'</div></div>';
-    }
-    box.innerHTML=one(g.breadth)+one(g.drift)+one(g.phase);
-  }
-  // 🔴 03.11 (Егор): в публичном срезе Observer — только тикер и сторона.
-  // План (вход/стоп/цель/плечо/RR) — ступень Operator. Отсутствие объявляем текстом,
-  // а не пустыми клетками: «нет данных» и «не по тарифу» — разные вещи.
-  function idea(it){
-    var act='<span class="lockbtn">'+LK+'План — на Operator</span>';
-    return '<article class="idea tk">'
-      + '<div class="sym ga-sym"><div class="s">'+esc(it.sym)+'</div>'
-      +   '<span class="side '+(it.side_cls==="short"?"short":"")+'">'+esc(it.side)+'</span></div>'
-      + '<div class="act ga-ac">'+act+'</div></article>';
-  }
-  function ideas(x, withheld){
-    if(!x) return;
-    set("ihTitle", x.title); set("ihNote", x.note);
-    var list=document.getElementById("ideaList"); if(!list) return;
-    if(x.items && x.items.length) list.innerHTML=x.items.map(idea).join("");
-    else list.innerHTML='<div class="drop">сегодня ни одна идея не прошла проверку — смотрим, не торгуем</div>';
-  }
+
   function render(d){
+    var v=d.verdict;
+    if(!v){ fail(); return; }
+    set("vTitle", v.title);
+    var tone={green:"ok",yellow:"warn",red:"bad"}[v.light]||"na";
+    $("vBox").className="mom-verdict "+tone;
+    if(v.sub){ set("vSub", v.sub); $("vSub").hidden=false; }
+    if(d.measured){ set("vMeasured", "◆ замерено · "+d.measured); $("vMeasured").hidden=false; }
+
     if(d.generated_utc){
-      set("dt", d.generated_utc);
-      var b=document.getElementById("demoBadge");
-      // live — живая отдача при показе; иначе это снимок, собранный из живой повестки.
-      // Не выдаём снимок за поток и наоборот.
-      if(b){ if(d.live){ b.textContent="данные рынка · "+d.generated_utc.split("· ").pop(); b.className="demo live"; }
-             else { b.textContent="снимок рынка · "+d.generated_utc.split("· ").pop(); b.className="demo"; } }
+      set("dt", "снимок на "+d.generated_utc);
+      var chip=$("chip");
+      chip.textContent = d.live ? "живые данные" : "снимок рынка";
+      chip.className = "hdr-chip " + (d.live ? "ok" : "warn");
     }
-    verdict(d.verdict); pulse(d.pulse); measured(d); gauges(d.gauges);
-    ideas(d.ideas);
-    // Отсев и сокрытие — одной строкой: что не показали и почему. Молчание читается как «данных нет».
-    var notice=[];
-    if(d.dropped) notice.push(d.dropped);
-    if(d.withheld && d.withheld.length) notice.push("скрыто по тарифу: "+d.withheld.join("; ")+" — доступно на Operator");
-    if(notice.length) set("drop", notice.join(" · "));
+
+    var g=d.gauges||{}, parts=[];
+    if(g.breadth) parts.push(gauge(g.breadth));
+    if(g.drift) parts.push(gauge(g.drift));
+    if(g.phase) parts.push(gauge(g.phase));
+    if(parts.length) $("gauges").innerHTML=parts.join("");
+
+    var p=d.pulse;
+    if(p){
+      set("pState", p.state);
+      $("pMove").innerHTML=(p.move||[]).map(function(w){
+        return "<span>"+esc(w.tf)+": ↓"+esc(w.dn)+" · ↑"+esc(w.up)+"</span>";
+      }).join("");
+      if(p.liq) set("pLiq", p.liq);
+      $("pulse").hidden=false;
+    }
+
+    var ideas=d.ideas||{}, items=ideas.items||[];
+    if(ideas.note) set("ideasNote", ideas.note);
+    if(items.length){
+      $("tickers").innerHTML=items.map(function(it){
+        return '<li class="mom-ticker"><b>'+esc(it.sym)+'</b>'
+          + '<span class="mom-side '+(it.side_cls==="short"?"short":"long")+'">'+esc(it.side)+'</span></li>';
+      }).join("");
+    } else {
+      $("tickers").innerHTML='<li class="mom-na">сегодня проверку не прошла ни одна идея — это не ошибка</li>';
+    }
+    if(d.withheld && d.withheld.length){
+      $("withheld").textContent="скрыто по тарифу: "+d.withheld.join("; ")+" — доступно на Operator";
+      $("withheld").hidden=false;
+    }
+    if(d.dropped){ set("dropped", d.dropped); $("dropped").style.display=""; }
+    else { $("dropped").style.display="none"; }
+
+    set("footL", "срез Observer · " + (d.live ? "живой снимок" : "снимок на момент сборки"));
+    set("footR", (d.generated_utc ? "собрано "+d.generated_utc+" · " : "") + (d.schema || ""));
   }
+
   fetch("./agenda.json?v="+Date.now(), {cache:"no-store"})
     .then(function(r){ if(!r.ok) throw 0; return r.json(); })
     .then(render)
-    .catch(function(){ /* файла нет — остаётся демо-скелет */ });
+    .catch(fail);
 })();
 </script>
-
 </body>
 </html>
